@@ -473,17 +473,25 @@
         let cx, cy;
         let scale = 1;
 
-        // CRITICAL BUG FIX #2: DPI Aware Fluid Canvas Sizer
+        // CRITICAL BUG FIX #2: DPI Aware Fluid Canvas Sizer using Logical Viewport Coordinates
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = window.innerWidth * dpr;
             canvas.height = window.innerHeight * dpr;
             canvas.style.width = window.innerWidth + 'px';
             canvas.style.height = window.innerHeight + 'px';
+            
             ctx.scale(dpr, dpr);
-            cx = canvas.width / (2 * dpr);
-            cy = canvas.height / (2 * dpr);
-            scale = Math.min(canvas.width, canvas.height) / 1200; // Adjusted based on scaled bounds
+            
+            cx = window.innerWidth / 2;
+            cy = window.innerHeight / 2;
+            
+            // Calculate scale using logical CSS pixels for an absolute immersive fit (fills vertical mobile screen gorgeously!)
+            scale = Math.min(window.innerWidth, window.innerHeight) / 360;
+            
+            // Let's set a safe limit so it doesn't get too large on big screens or too small on tiny screens
+            if (scale < 0.7) scale = 0.7;
+            if (scale > 1.6) scale = 1.6;
         }
         window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
@@ -1036,7 +1044,7 @@
             if (!dt || dt > 10) dt = 1;
             lastTime = time;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
             let pulseActive = false;
             if (gameState.bgPulseTimer > 0) {
@@ -1143,7 +1151,7 @@
                     type = "giant_obstacle";
                 }
                 
-                // CRITICAL LOGICAL BUG FIX #1: Prevent unavoidable double-lane obstacles.
+                // Prevent unavoidable double-lane obstacles.
                 // If a spike is spawned within 1.3 radians of the previous spike, force it into the SAME lane!
                 let lastSpike = null;
                 for (let j = gameState.entities.length - 1; j >= 0; j--) {
@@ -1377,8 +1385,7 @@
                     }
                 }
 
-                // CRITICAL LOGICAL BUG FIX #2: Missed coin check now verified against absolute cumulative distance traveled.
-                // This completely prevents future coins from triggering combo reset.
+                // Missed coin check now verified against absolute cumulative distance traveled.
                 if (ent.wasCoin && ent.active && !gameState.isDying) {
                     let passedDistance = gameState.distanceTraveled - ent.distancePoint;
                     if (passedDistance > 0.3 && !ent.missed) {
@@ -1575,13 +1582,13 @@
                     
                     // Laser Warning Screen Flash for alert feedback
                     ctx.fillStyle = 'rgba(255, 0, 85, 0.05)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
                     
                     ctx.strokeStyle = Math.floor(Date.now() / 100) % 2 === 0 ? "rgba(255, 0, 85, 0.8)" : "rgba(255, 0, 85, 0.1)";
                     ctx.lineWidth = 2 * scale;
                     ctx.beginPath();
                     ctx.moveTo(0, cy);
-                    ctx.lineTo(canvas.width, cy);
+                    ctx.lineTo(window.innerWidth, cy);
                     ctx.stroke();
                     ctx.restore();
                 }
@@ -1594,14 +1601,14 @@
                     ctx.globalAlpha = 0.8;
                     ctx.beginPath();
                     ctx.moveTo(0, cy);
-                    ctx.lineTo(canvas.width, cy);
+                    ctx.lineTo(window.innerWidth, cy);
                     ctx.stroke();
                     
                     ctx.strokeStyle = "#ffffff";
                     ctx.lineWidth = 4 * scale;
                     ctx.beginPath();
                     ctx.moveTo(0, cy);
-                    ctx.lineTo(canvas.width, cy);
+                    ctx.lineTo(window.innerWidth, cy);
                     ctx.stroke();
                     ctx.restore();
                 }
@@ -1617,7 +1624,7 @@
                 let radius = 110 * scale;
 
                 ctx.beginPath();
-                ctx.rect(0, 0, canvas.width, canvas.height);
+                ctx.rect(0, 0, window.innerWidth, window.innerHeight);
                 ctx.arc(pX, pY, radius, 0, Math.PI * 2, true);
                 ctx.fill();
                 ctx.restore();
