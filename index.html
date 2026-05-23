@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>دائرة الموت - Rhythm Neon Arcade</title>
+    <!-- Tailwind CSS for modern glassmorphic interface -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for exquisite gaming Arabic typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for neon-glowing arcade icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #030307;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        .neon-glow {
+            text-shadow: 0 0 10px rgba(255, 0, 85, 0.8), 0 0 20px rgba(255, 0, 85, 0.5);
+        }
+        .neon-border-screen {
+            box-shadow: inset 0 0 30px rgba(255, 0, 85, 0.4), 0 0 15px rgba(255, 0, 85, 0.3);
+            border: 4px solid #ff0055;
+            transition: border-color 1s ease, box-shadow 1s ease;
+        }
+        .neon-text-red {
+            text-shadow: 0 0 12px rgba(255, 0, 85, 0.9), 0 0 25px rgba(255, 0, 85, 0.6);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.8);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 0, 85, 0.4);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 0, 85, 0.7);
+        }
+        
+        /* Smooth scale animation for popups and menus to prevent sudden jumps */
+        #shop-modal, #level-modal, #help-modal, #gameover-overlay, #victory-overlay, #main-menu {
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex items-center justify-center text-white relative p-3 md:p-6">
+
+    <!-- Screen border decoration inspired by Image 2 -->
+    <div id="screen-edge-border" class="absolute inset-0 z-40 pointer-events-none rounded-3xl neon-border-screen"></div>
+
+    <!-- Ambient Neon Background Aura -->
+    <div id="ambient-bg-aura" class="absolute inset-0 bg-radial-gradient from-red-950/10 via-black to-black z-0 pointer-events-none transition-all duration-1000"></div>
+
+    <!-- MAIN MENU LAYER (Directly matching Image 2) -->
+    <div id="main-menu" class="absolute inset-0 z-30 flex flex-col items-center justify-between p-8 md:p-12 transition-all duration-500 ease-in-out">
+        <!-- Top bar with Volume only -->
+        <div class="w-full flex justify-end items-center max-w-4xl">
+            <button id="sound-toggle-btn" class="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/15 transition backdrop-blur-md text-[#ff0055] text-lg">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
+
+        <!-- Middle: Menu Panel matching Image 2 -->
+        <div class="flex flex-col items-center text-center my-auto">
+            <h1 class="text-6xl md:text-8xl font-black tracking-widest text-[#ff0055] neon-text-red mb-6 select-none">
+                دائرة الموت
+            </h1>
+            
+            <!-- Balance display (رصيدك: X 💰) -->
+            <div class="flex items-center gap-2 px-6 py-2 rounded-full mb-3 text-2xl font-bold text-yellow-400">
+                <span>رصيدك:</span>
+                <span id="menu-coin-count" class="font-black">0</span>
+                <i class="fa-solid fa-sack-dollar text-yellow-400"></i>
+            </div>
+
+            <!-- Current Level status -->
+            <p id="menu-level-status" class="text-gray-400 text-lg font-semibold tracking-wide mb-8">
+                المستوى الحالي: 1 / 30
+            </p>
+
+            <!-- Main Big Challenge Button (Orange-Red Gradient with Play Icon) -->
+            <button id="play-campaign-btn" class="px-12 py-4 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 rounded-full font-black text-2xl tracking-wider hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(239,68,68,0.5)] border-t border-white/20 flex items-center gap-3">
+                <i class="fa-solid fa-play-plane bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center text-sm"><i class="fa-solid fa-play mr-0.5"></i></i> ابدأ التحدي
+            </button>
+        </div>
+
+        <!-- Bottom Actions (Matching Image 2 + Endless) -->
+        <div class="w-full max-w-md flex flex-col gap-3 mb-4 z-40 items-center">
+            <div class="grid grid-cols-3 gap-3 w-full">
+                <button id="shop-btn" class="py-3 bg-neutral-900 border border-neutral-800 hover:border-purple-500 hover:text-purple-400 active:scale-95 transition rounded-2xl font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shopping-cart text-purple-400"></i> المتجر
+                </button>
+                <button id="play-endless-btn" class="py-3 bg-neutral-900 border border-neutral-800 hover:border-pink-500 hover:text-pink-400 active:scale-95 transition rounded-2xl font-bold flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-solid fa-infinity text-pink-500"></i> طور اللانهائي
+                </button>
+                <button id="how-to-play-btn" class="py-3 bg-neutral-900 border border-neutral-800 hover:border-cyan-400 hover:text-cyan-400 active:scale-95 transition rounded-2xl font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cog text-cyan-400"></i> إعدادات
+                </button>
+            </div>
+            
+            <!-- Clear Progress Button at the very bottom -->
+            <button id="reset-progress-btn" class="text-xs text-neutral-600 hover:text-red-400 transition underline decoration-dotted mt-2">
+                مسح التقدم الحفظي
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME HUD LAYER (Matching Image 1 Capsules) -->
+    <div id="game-hud" class="absolute inset-x-0 top-0 z-20 flex justify-between items-center p-6 max-w-6xl mx-auto opacity-0 pointer-events-none transition-opacity duration-300 mt-4">
+        <!-- Top Left: Red back-to-list capsule button -->
+        <button id="hud-back-menu-btn" class="px-5 py-2 rounded-xl bg-red-950/40 border-2 border-red-600 text-red-500 hover:bg-red-600 hover:text-white transition font-black text-sm flex items-center gap-2 pointer-events-auto">
+            <i class="fa-solid fa-home"></i> قائمة
+        </button>
+
+        <!-- Top Center: Glowing Cyan Capsule indicating Current Level & Tier -->
+        <div class="px-6 py-2 rounded-full border-2 border-cyan-400 bg-black/60 text-cyan-400 shadow-[0_0_15px_rgba(0,243,255,0.4)] font-black text-sm md:text-base tracking-wide flex items-center gap-1">
+            <span id="hud-level-title">المستوى 1</span>
+            <span id="hud-level-tier" class="text-xs text-pink-500 font-bold">(مبتدئ)</span>
+        </div>
+
+        <!-- Top Right: Glowing Yellow Capsule indicating current coins -->
+        <div class="px-5 py-2 rounded-full border-2 border-yellow-400 bg-black/60 text-yellow-400 shadow-[0_0_15px_rgba(255,215,0,0.4)] font-black text-sm md:text-base flex items-center gap-2">
+            <span id="hud-coin-count">0</span>
+            <i class="fa-solid fa-sack-dollar"></i>
+        </div>
+    </div>
+
+    <!-- LEVEL SELECTION MODAL -->
+    <div id="level-modal" class="absolute inset-0 bg-black/95 z-40 hidden flex-col items-center justify-center p-6 md:p-12 scale-90">
+        <div class="w-full max-w-3xl flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-black text-[#ff0055] neon-text-red"><i class="fa-solid fa-map ml-2"></i>اختر مسار التحدي (30 مستوى)</h2>
+            <button id="close-level-modal" class="w-12 h-12 rounded-full bg-white/10 border border-white/20 hover:bg-red-500/20 active:scale-90 transition flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+        <div id="levels-grid" class="w-full max-w-3xl grid grid-cols-5 gap-3 md:gap-4 overflow-y-auto max-h-[70vh] p-2 custom-scrollbar">
+            <!-- Programmatically populated -->
+        </div>
+    </div>
+
+    <!-- SHOP MODAL -->
+    <div id="shop-modal" class="absolute inset-0 bg-black/95 z-40 hidden flex-col items-center justify-center p-6 md:p-12 scale-90">
+        <div class="w-full max-w-3xl flex justify-between items-center mb-6">
+            <div class="flex flex-col">
+                <h2 class="text-3xl font-black text-purple-400"><i class="fa-solid fa-store ml-2"></i>المتجر المركزي</h2>
+                <div class="flex items-center gap-2 mt-1 bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">
+                    <i class="fa-solid fa-coins text-yellow-400 text-sm"></i>
+                    <span id="shop-coin-balance" class="text-yellow-400 font-black text-sm">0</span>
+                </div>
+            </div>
+            <button id="close-shop-modal" class="w-12 h-12 rounded-full bg-white/10 border border-white/20 hover:bg-red-500/20 active:scale-90 transition flex items-center justify-center">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Shop Tabs -->
+        <div class="w-full max-w-3xl flex border-b border-white/10 mb-6">
+            <button id="tab-skins-btn" class="flex-1 py-3 text-center font-bold text-lg border-b-2 border-purple-500 text-purple-400 transition">
+                <i class="fa-solid fa-wand-magic-sparkles ml-1"></i> الأشكال والهالات (Skins)
+            </button>
+            <button id="tab-upgrades-btn" class="flex-1 py-3 text-center font-bold text-lg border-b-2 border-transparent text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-bolt ml-1"></i> الترقيات والمستشعرات
+            </button>
+        </div>
+
+        <!-- Shop Contents -->
+        <div class="w-full max-w-3xl overflow-y-auto max-h-[55vh] p-2 custom-scrollbar">
+            <div id="shop-skins-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Programmatically populated skins -->
+            </div>
+            <div id="shop-upgrades-container" class="hidden flex-col gap-4">
+                <!-- Programmatically populated upgrades -->
+            </div>
+        </div>
+    </div>
+
+    <!-- HOW TO PLAY / SETTINGS MODAL -->
+    <div id="help-modal" class="absolute inset-0 bg-black/95 z-40 hidden flex-col items-center justify-center p-6 scale-90">
+        <div class="w-full max-w-lg bg-neutral-900 border border-white/10 rounded-3xl p-6 relative">
+            <button id="close-help-modal" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-black text-cyan-400 mb-4 text-center"><i class="fa-solid fa-circle-question ml-2"></i>تعليمات المدار والتحكم</h3>
+            <div class="space-y-4 text-gray-300 text-sm leading-relaxed text-right">
+                <div class="flex gap-3 items-start">
+                    <div class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold shrink-0">1</div>
+                    <p>أنت تمثل <strong>جزيء طاقة مشع</strong> يدور بشكل مستمر حول مدار دائري وردي موحد.</p>
+                </div>
+                <div class="flex gap-3 items-start">
+                    <div class="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold shrink-0">2</div>
+                    <p>اضغط على <strong>الشاشة أو زر المسطرة (Spacebar)</strong> لتجعل الجزيء يقفز على الفور من الجهة الداخلية للدائرة إلى الجهة الخارجية أو العكس لتفادي الأشواك الحادة.</p>
+                </div>
+                <div class="flex gap-3 items-start">
+                    <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold shrink-0">3</div>
+                    <p>اجمع <strong>الذهب الأصفر</strong> لشراء السكنات، واحذر من العملات المتفجرة في المراحل الصعبة!</p>
+                </div>
+                <div class="flex gap-3 items-start border-t border-white/5 pt-3">
+                    <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-bold shrink-0"><i class="fa-solid fa-shield-halved"></i></div>
+                    <p class="text-emerald-400 font-bold">ملاحظة الأمان: عند بداية كل ليفل, تحصل تلقائياً على درع طاقة مؤقت لحمايتك من الموت المفاجئ على الفور!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER / RESTART SCREEN -->
+    <div id="gameover-overlay" class="absolute inset-0 bg-black/95 z-30 hidden flex-col items-center justify-center p-6 text-center scale-90">
+        <!-- Near-Miss Alert message -->
+        <div id="near-miss-banner" class="hidden mb-6 bg-red-500/20 border-2 border-red-500 px-6 py-3 rounded-2xl animate-bounce max-w-md">
+            <span class="text-red-400 font-black text-sm block">💡 تأثير النير-ميس! (Near-Miss)</span>
+            <span id="near-miss-text" class="text-white text-xs font-bold mt-1 block"></span>
+        </div>
+
+        <h2 class="text-6xl font-black text-red-500 tracking-wider neon-text-red mb-2 uppercase">تَدَمَّرَ الجُزَيْء!</h2>
+        <p class="text-gray-400 text-sm max-w-xs mb-6">لقد اصطدمت بشوكة حادة وفقدت استقرار جزيء الطاقة الخاص بك.</p>
+        
+        <!-- Highly Motivational Dopamine Tip -->
+        <p class="text-yellow-400 text-xs font-black blink animate-pulse mb-4">انقر في أي مكان على الشاشة لإعادة المحاولة فوراً! ⚡</p>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl max-w-xs w-full mb-8">
+            <div class="flex flex-col">
+                <span class="text-xs text-gray-400 font-bold">التقدم المنجز</span>
+                <span id="go-stat-progress" class="text-xl font-black text-cyan-400">0%</span>
+            </div>
+            <div class="flex flex-col border-r border-white/10">
+                <span class="text-xs text-gray-400 font-bold">الذهب المجموع</span>
+                <span id="go-stat-coins" class="text-xl font-black text-yellow-400">+0</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-3 w-full max-w-xs z-50">
+            <button id="go-retry-btn" class="w-full py-4 bg-gradient-to-r from-red-500 to-pink-600 rounded-xl font-black text-lg shadow-lg hover:scale-105 active:scale-95 transition">
+                <i class="fa-solid fa-rotate-right ml-2"></i> محاولة سريعة ثانية
+            </button>
+            <button id="go-menu-btn" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl font-bold transition">
+                <i class="fa-solid fa-house ml-2"></i> القائمة الرئيسية
+            </button>
+        </div>
+    </div>
+
+    <!-- LEVEL VICTORY SCREEN -->
+    <div id="victory-overlay" class="absolute inset-0 bg-black/95 z-30 hidden flex-col items-center justify-center p-6 text-center scale-90">
+        <div class="w-24 h-24 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-4xl text-emerald-400 mb-4 animate-bounce">
+            <i class="fa-solid fa-crown"></i>
+        </div>
+        <h2 class="text-5xl font-black text-emerald-400 tracking-wider mb-2">تَمَّ كَسْبُ المَسَار!</h2>
+        <p class="text-gray-400 text-sm max-w-xs mb-6">لقد أكملت جميع لفات المدار بأمان مذهل وردود أفعال أسطورية.</p>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl max-w-xs w-full mb-8">
+            <div class="flex flex-col">
+                <span class="text-xs text-gray-400 font-bold">مكافأة الفوز</span>
+                <span class="text-xl font-black text-emerald-400">+50 ذهبة</span>
+            </div>
+            <div class="flex flex-col border-r border-white/10">
+                <span class="text-xs text-gray-400 font-bold">الذهب الإجمالي</span>
+                <span id="vic-stat-coins" class="text-xl font-black text-yellow-400">+0</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-3 w-full max-w-xs z-50">
+            <button id="vic-next-btn" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl font-black text-lg shadow-lg hover:scale-105 active:scale-95 transition">
+                <i class="fa-solid fa-arrow-left ml-2"></i> المسار التالي
+            </button>
+            <button id="vic-menu-btn" class="w-full py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl font-bold transition">
+                <i class="fa-solid fa-house ml-2"></i> القائمة الرئيسية
+            </button>
+        </div>
+    </div>
+
+    <!-- PRIMARY GAME CANVAS -->
+    <canvas id="game-canvas" class="w-full h-full block z-10"></canvas>
+
+    <script>
+        // Global references & bug guards
+        let slowMoTimeoutId = null;
+
+        // Audio synthesis engine utilizing Web Audio API
+        class SoundSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+            playCoin(pitchMultiplier = 1) {
+                if (this.muted) return;
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sine';
+                
+                let baseFreq = 440; // A4
+                osc.frequency.setValueAtTime(baseFreq * pitchMultiplier, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5 * pitchMultiplier, this.ctx.currentTime + 0.12);
+                
+                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+            playSuperCoin() {
+                if (this.muted) return;
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'triangle';
+                
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.35);
+            }
+            playJump() {
+                if (this.muted) return;
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sine';
+                
+                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(440, this.ctx.currentTime + 0.08);
+                
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+            playShieldBreak() {
+                if (this.muted) return;
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sawtooth';
+                
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, this.ctx.currentTime + 0.25);
+                
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            }
+            playDeath() {
+                if (this.muted) return;
+                this.init();
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sawtooth';
+                
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.6);
+                
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.6);
+            }
+        }
+        
+        const audio = new SoundSynth();
+
+        // Level Registry (30 levels with diverse tags and mechanics)
+        const levelRegistry = [
+            // LEVEL 0 (Special Endless)
+            { id: 0, name: "مسار النجاة الأبدي", tier: "لانهائي", speed: 0.035, gap: 2.6, targetLaps: 99999, mechanics: {} },
+            // LEVELS 1-30
+            { id: 1, name: "البداية الآمنة", tier: "مبتدئ", speed: 0.032, gap: 2.7, targetLaps: 1.5, mechanics: {} },
+            { id: 2, name: "التناغم الأولي", tier: "مبتدئ", speed: 0.035, gap: 2.5, targetLaps: 2, mechanics: {} },
+            { id: 3, name: "سرعة التدفق", tier: "مبتدئ", speed: 0.040, gap: 2.3, targetLaps: 2, mechanics: {} },
+            { id: 4, name: "الشوكة النيونية العملاقة", tier: "مبتدئ", speed: 0.043, gap: 2.1, targetLaps: 2, mechanics: { giantSpikes: true } },
+            { id: 5, name: "متاهة الريتم المتبادل", tier: "مبتدئ", speed: 0.045, gap: 2.0, targetLaps: 2.5, mechanics: { alternatingMaze: true } },
+            { id: 6, name: "طفرة السرعة المفاجئة", tier: "مبتدئ", speed: 0.042, gap: 2.1, targetLaps: 2.5, mechanics: { speedSurge: true } },
+            { id: 7, name: "ضباب الموت المشع", tier: "مبتدئ", speed: 0.042, gap: 2.0, targetLaps: 3, mechanics: { fog: true } },
+            { id: 8, name: "عاصفة العملات الذهبية", tier: "مبتدئ", speed: 0.048, gap: 9.0, targetLaps: 2, mechanics: { coinStorm: true } },
+            { id: 9, name: "الشوكة المراوغة", tier: "مبتدئ", speed: 0.045, gap: 2.0, targetLaps: 3, mechanics: { shiftingSpikes: true } },
+            { id: 10, name: "الزعيم الأول: انفجار العكس", tier: "زعيم", speed: 0.048, gap: 1.9, targetLaps: 3, mechanics: { reverseAtHalf: true } },
+            { id: 11, name: "دروع الحماية الطيفية", tier: "محترف", speed: 0.046, gap: 1.9, targetLaps: 3, mechanics: { hasShields: true } },
+            { id: 12, name: "العوائق الدوارة", tier: "محترف", speed: 0.046, gap: 1.9, targetLaps: 3, mechanics: { spinningSpikes: true } },
+            { id: 13, name: "المغناطيس الكهرومغناطيسي", tier: "محترف", speed: 0.048, gap: 1.8, targetLaps: 3.5, mechanics: { hasMagnet: true } },
+            { id: 14, name: "ليزر الموت القاطع", tier: "محترف", speed: 0.049, gap: 1.8, targetLaps: 3.5, mechanics: { lasers: true } },
+            { id: 15, name: "الجاذبية المقلوبة بالكامل", tier: "محترف", speed: 0.052, gap: 1.7, targetLaps: 4, mechanics: { reverseGravity: true } },
+            { id: 16, name: "التحكم بالزمن (SlowMo)", tier: "محترف", speed: 0.052, gap: 1.7, targetLaps: 4, mechanics: { slowMoItem: true } },
+            { id: 17, name: "العملات البرتقالية المتفجرة", tier: "محترف", speed: 0.050, gap: 1.7, targetLaps: 4, mechanics: { explosiveCoins: true } },
+            { id: 18, name: "المدار المتنفس (النبضي)", tier: "محترف", speed: 0.052, gap: 1.7, targetLaps: 4, mechanics: { pulsingOrbit: true } },
+            { id: 19, name: "تحدي الـ Combo المتتالي", tier: "محترف", speed: 0.052, gap: 1.9, targetLaps: 999, mechanics: { comboChallenge: true } },
+            { id: 20, name: "الزعيم الثاني: الزلزال المتواصل", tier: "زعيم", speed: 0.053, gap: 1.8, targetLaps: 4, mechanics: { boss2: true } },
+            { id: 21, name: "دمج الصدمات المغناطيسية", tier: "أسطورة", speed: 0.054, gap: 1.7, targetLaps: 4.5, mechanics: { alternatingMaze: true, explosiveCoins: true, hasShields: true } },
+            { id: 22, name: "العاصفة والدرع", tier: "أسطورة", speed: 0.056, gap: 1.6, targetLaps: 4.5, mechanics: { hasShields: true, spinningSpikes: true } },
+            { id: 23, name: "مذبذب الزمن والسرعة", tier: "أسطورة", speed: 0.056, gap: 1.6, targetLaps: 5, mechanics: { slowMoItem: true, speedSurge: true } },
+            { id: 24, name: "شفرات الموت المتساقطة", tier: "أسطورة", speed: 0.058, gap: 1.5, targetLaps: 5, mechanics: { lasers: true, spinningSpikes: true } },
+            { id: 25, name: "تحدي الغمامة والذاكرة (Blindfold)", tier: "أسطورة", speed: 0.055, gap: 1.6, targetLaps: 4.5, mechanics: { blindfold: true } },
+            { id: 26, name: "المدار الشبح المخفي", tier: "أسطورة", speed: 0.058, gap: 1.6, targetLaps: 5, mechanics: { invisibleTrack: true } },
+            { id: 27, name: "عكس نظام التحكم (النقر المزدوج)", tier: "أسطورة", speed: 0.053, gap: 1.7, targetLaps: 5, mechanics: { reversedControls: true } },
+            { id: 28, name: "التصاعد اللانهائي للسرعة", tier: "أسطورة", speed: 0.040, gap: 1.5, targetLaps: 5, mechanics: { speedEscalation: true } },
+            { id: 29, name: "مسار النجاة القاسي", tier: "أسطورة", speed: 0.060, gap: 1.4, targetLaps: 5.5, mechanics: { survivalOnly: true } },
+            { id: 30, name: "المواجهة الكونية الكبرى: دائرة الفناء", tier: "زعيم", speed: 0.064, gap: 1.3, targetLaps: 6, mechanics: { boss2: true, lasers: true, explosiveCoins: true, hasShields: true, shiftingSpikes: true } }
+        ];
+
+        // Saved progress database
+        let playerProgress = {
+            coins: 0,
+            highestLevelUnlocked: 1,
+            endlessHighScore: 0,
+            equippedSkin: "classic",
+            unlockedSkins: ["classic"],
+            upgrades: {
+                multiplier: 1,
+                shield: 1,
+                magnet: 1
+            }
+        };
+
+        if (localStorage.getItem("death_circle_progress")) {
+            playerProgress = JSON.parse(localStorage.getItem("death_circle_progress"));
+        }
+
+        function saveProgress() {
+            localStorage.setItem("death_circle_progress", JSON.stringify(playerProgress));
+        }
+
+        const skinsRegistry = {
+            classic: { name: "الكلاسيكي السماوي", cost: 0, color: "#00f3ff", trail: "classic", desc: "جزيء النيون الأساسي" },
+            green: { name: "الأخضر المضيء", cost: 100, color: "#10b981", trail: "classic", desc: "هالة خضراء متوازنة" },
+            orange: { name: "البرتقالي المشتعل", cost: 150, color: "#f97316", trail: "classic", desc: "توقيت حار وصاخب" },
+            pink: { name: "الوردي الفوضوي", cost: 150, color: "#ec4899", trail: "classic", desc: "أناقة الريتم الوردي" },
+            gold: { name: "اللهب الذهبي", cost: 300, color: "#eab308", trail: "gold", desc: "ذيل من الذهب المتطاير" },
+            ghost: { name: "الشبح الأبيض", cost: 500, color: "#f8fafc", trail: "ghost", desc: "طيف من الجزيئات المتلاشية" },
+            fire: { name: "النجم المستعر", cost: 800, color: "#ef4444", trail: "fire", desc: "اترك رماداً نارياً مشعاً خلف حركتك" }
+        };
+
+        const canvas = document.getElementById("game-canvas");
+        const ctx = canvas.getContext("2d");
+
+        let cx, cy;
+        let scale = 1;
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            cx = canvas.width / 2;
+            cy = canvas.height / 2;
+            scale = Math.min(canvas.width, canvas.height) / 600;
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        // Color shift system based on completed laps in Endless Mode
+        function getTrackColor() {
+            if (!gameState.isEndless) return "#ff0055"; // Pink
+            let currentTotalLaps = Math.floor(gameState.distanceTraveled / (Math.PI * 2));
+            if (currentTotalLaps < 3) return "#ff0055"; // Pink
+            if (currentTotalLaps < 6) return "#00f3ff"; // Cyan
+            if (currentTotalLaps < 9) return "#10b981"; // Green
+            if (currentTotalLaps < 12) return "#d946ef"; // Purple
+            return "#f97316"; // Orange
+        }
+
+        // Apply progressive colors to the screen borders and ambient auroras dynamically
+        function updateScreenAestheticColors() {
+            let activeColor = getTrackColor();
+            let borderEl = document.getElementById("screen-edge-border");
+            let bgEl = document.getElementById("ambient-bg-aura");
+            
+            if (borderEl && bgEl) {
+                borderEl.style.borderColor = activeColor;
+                borderEl.style.boxShadow = `inset 0 0 30px ${activeColor}55, 0 0 15px ${activeColor}44`;
+                bgEl.style.backgroundImage = `radial-gradient(circle, ${activeColor}15 0%, #000000 100%)`;
+            }
+        }
+
+        // 1. Player Class (Tracks absolute angle on helical continuous timeline)
+        class Player {
+            constructor() {
+                this.absoluteAngle = 0;
+                this.angle = 0;
+                this.isOutside = false;
+                
+                // Track positions: Inner side is 115px, Outer side is 155px. Mid-circle track is at 135px
+                this.innerRadius = 115;
+                this.outerRadius = 155;
+                
+                this.distance = this.innerRadius;
+                this.targetDistance = this.innerRadius;
+                this.trail = [];
+                this.trailMaxLength = 24;
+            }
+
+            jump() {
+                this.isOutside = !this.isOutside;
+                this.targetDistance = this.isOutside ? this.outerRadius : this.innerRadius;
+                audio.playJump();
+                
+                // Accelerate background particles on jump to make the universe breathe with your finger
+                gameState.bgPulseTimer = 25;
+
+                // DOPAMINE BOOST: PERFECT JUMP MECHANIC
+                // Check if any obstacle is dangerously close (within 0.24 radians)
+                let isPerfect = false;
+                for (let ent of gameState.entities) {
+                    if (ent.type === "obstacle" || ent.type === "giant_obstacle") {
+                        let dAngle = Math.abs(this.absoluteAngle - ent.angle);
+                        if (dAngle < 0.24) {
+                            isPerfect = true;
+                            break;
+                        }
+                    }
+                }
+                if (isPerfect && !gameState.isDying) {
+                    gameState.perfectTextTimer = 55;
+                    playerProgress.coins += 2;
+                    gameState.coinsCollectedThisRun += 2;
+                    saveProgress();
+                    audio.playCoin(1.8); // High pitched reward sound
+                    
+                    let px = cx + Math.cos(this.absoluteAngle) * this.distance * scale;
+                    let py = cy + Math.sin(this.absoluteAngle) * this.distance * scale;
+                    createExplosionParticles(px, py, "#ffd700", 18); // Gold sparks
+                    updateHUD();
+                }
+            }
+
+            update(speed, rotDirection, dt) {
+                this.absoluteAngle += speed * rotDirection * dt;
+                this.angle = this.absoluteAngle % (Math.PI * 2);
+                if (this.angle < 0) this.angle += Math.PI * 2;
+
+                // Elastic transition
+                this.distance += (this.targetDistance - this.distance) * 0.22 * dt;
+
+                let px = cx + Math.cos(this.absoluteAngle) * this.distance * scale;
+                let py = cy + Math.sin(this.absoluteAngle) * this.distance * scale;
+                
+                this.trail.push({ x: px, y: py, angle: this.absoluteAngle, distance: this.distance });
+                if (this.trail.length > this.trailMaxLength) {
+                    this.trail.shift();
+                }
+            }
+
+            draw() {
+                let skin = skinsRegistry[playerProgress.equippedSkin] || skinsRegistry.classic;
+                
+                ctx.save();
+                for (let i = 0; i < this.trail.length; i++) {
+                    let pt = this.trail[i];
+                    let alpha = i / this.trail.length * 0.4;
+                    ctx.fillStyle = skin.color;
+                    ctx.globalAlpha = alpha;
+                    
+                    if (skin.trail === "fire") {
+                        let size = (i / this.trail.length) * 8 * scale * (0.8 + Math.random() * 0.4);
+                        ctx.beginPath();
+                        ctx.arc(pt.x + (Math.random()-0.5)*10, pt.y + (Math.random()-0.5)*10, size, 0, Math.PI*2);
+                        ctx.fill();
+                    } else if (skin.trail === "gold") {
+                        ctx.fillStyle = "#fbbf24";
+                        let size = (i / this.trail.length) * 6 * scale;
+                        ctx.beginPath();
+                        ctx.rect(pt.x - size/2, pt.y - size/2, size, size);
+                        ctx.fill();
+                    } else if (skin.trail === "ghost") {
+                        if (i % 6 === 0) {
+                            ctx.beginPath();
+                            ctx.arc(pt.x, pt.y, 10 * scale, 0, Math.PI*2);
+                            ctx.strokeStyle = "#ffffff";
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    } else {
+                        let size = (i / this.trail.length) * 10 * scale;
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+
+                let px = cx + Math.cos(this.absoluteAngle) * this.distance * scale;
+                let py = cy + Math.sin(this.absoluteAngle) * this.distance * scale;
+
+                ctx.save();
+                ctx.shadowColor = skin.color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = skin.color;
+                ctx.beginPath();
+                ctx.arc(px, py, 12 * scale, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(px, py, 5 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 2. Entity Class (Obstacles maintain their unique helical identity angle)
+        class Entity {
+            constructor(angle, type, isOutside, timer = 120) {
+                this.angle = angle; // Cumulative absolute angle
+                this.type = type; // obstacle, giant_obstacle, coin, super_coin, shield_item, magnet_item, slowmo_item
+                this.isOutside = isOutside;
+                this.active = true;
+                this.timer = timer;
+                this.maxTimer = timer;
+                this.pulse = 0;
+                this.missed = false; // Flag to ensure the combo resets only once when bypassed
+                this.distancePoint = 0; // Cumulative physical path distance spawned at
+                
+                // CRITICAL LOGICAL BUG FIX #2: Cache original coin identity to penalize missed explosive coins
+                this.wasCoin = (type === "coin" || type === "super_coin"); 
+            }
+
+            update(speed, rotDirection) {
+                this.pulse += 0.08;
+                if (this.type === "obstacle" && gameState.activeLevel.mechanics.spinningSpikes) {
+                    this.angle += 0.015 * rotDirection;
+                }
+                if (this.type === "super_coin" && gameState.activeLevel.mechanics.explosiveCoins) {
+                    this.timer--;
+                    if (this.timer <= 0) {
+                        this.type = "obstacle";
+                        createExplosionParticles(
+                            cx + Math.cos(this.angle) * (this.isOutside ? 155 : 115) * scale,
+                            cy + Math.sin(this.angle) * (this.isOutside ? 155 : 115) * scale,
+                            "#ff0055", 12
+                        );
+                    }
+                }
+                // Also support basic coin exploding timers if configured for Level 17
+                if (this.type === "coin" && gameState.activeLevel.mechanics.explosiveCoins) {
+                    this.timer--;
+                    if (this.timer <= 0) {
+                        this.type = "obstacle";
+                        createExplosionParticles(
+                            cx + Math.cos(this.angle) * (this.isOutside ? 155 : 115) * scale,
+                            cy + Math.sin(this.angle) * (this.isOutside ? 155 : 115) * scale,
+                            "#ff0055", 12
+                        );
+                    }
+                }
+            }
+
+            draw() {
+                if (!this.active) return;
+                
+                let trackDist = 135 * scale; // Mid line
+                let dist = (this.isOutside ? 155 : 115) * scale;
+                let px = cx + Math.cos(this.angle) * dist;
+                let py = cy + Math.sin(this.angle) * dist;
+                
+                ctx.save();
+                
+                if (this.type === "obstacle" || this.type === "giant_obstacle") {
+                    let size = (this.type === "giant_obstacle" ? 24 : 15) * scale;
+                    ctx.shadowColor = "#ff0055";
+                    ctx.shadowBlur = 12;
+                    ctx.fillStyle = "#ff0055";
+                    
+                    let outVecX = Math.cos(this.angle);
+                    let outVecY = Math.sin(this.angle);
+                    let tangentX = -Math.sin(this.angle);
+                    let tangentY = Math.cos(this.angle);
+                    
+                    let tipDist = (this.isOutside ? 162 : 108) * scale;
+                    let tipX = cx + outVecX * tipDist;
+                    let tipY = cy + outVecY * tipDist;
+                    
+                    let basePx = cx + outVecX * trackDist;
+                    let basePy = cy + outVecY * trackDist;
+                    
+                    let baseL_X = basePx - tangentX * (size * 0.5);
+                    let baseL_Y = basePy - tangentY * (size * 0.5);
+                    let baseR_X = basePx + tangentX * (size * 0.5);
+                    let baseR_Y = basePy + tangentY * (size * 0.5);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(tipX, tipY);
+                    ctx.lineTo(baseL_X, baseL_Y);
+                    ctx.lineTo(baseR_X, baseR_Y);
+                    ctx.closePath();
+                    ctx.fill();
+                } 
+                else if (this.type === "coin") {
+                    let size = (8 + Math.sin(this.pulse) * 1.5) * scale;
+                    ctx.shadowBlur = 10;
+
+                    // CRITICAL LOGICAL BUG FIX #1 & #3: Flashing neon warnings inside normal coins
+                    if (gameState.activeLevel.mechanics.explosiveCoins) {
+                        ctx.shadowColor = "#f97316";
+                        let ratio = this.timer / this.maxTimer;
+                        ctx.fillStyle = ratio < 0.35 ? (Math.floor(Date.now()/50)%2 === 0 ? "#ff0055" : "#eab308") : "#f97316";
+                    } else {
+                        ctx.shadowColor = "#ffd700";
+                        ctx.fillStyle = "#ffd700";
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(px, py, size * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                } 
+                else if (this.type === "super_coin") {
+                    let size = (13 + Math.sin(this.pulse) * 2) * scale;
+                    ctx.shadowColor = "#d946ef";
+                    ctx.shadowBlur = 14;
+                    
+                    if (gameState.activeLevel.mechanics.explosiveCoins) {
+                        let ratio = this.timer / this.maxTimer;
+                        ctx.fillStyle = ratio < 0.35 ? (Math.floor(Date.now()/50)%2 === 0 ? "#ff0055" : "#eab308") : "#f97316";
+                    } else {
+                        ctx.fillStyle = "#d946ef";
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(px, py, size * 1.3, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+                else if (this.type === "shield_item") {
+                    let size = 12 * scale;
+                    ctx.shadowColor = "#10b981";
+                    ctx.shadowBlur = 12;
+                    ctx.fillStyle = "#10b981";
+                    ctx.beginPath();
+                    ctx.moveTo(px, py - size);
+                    ctx.lineTo(px + size, py - size*0.4);
+                    ctx.lineTo(px + size*0.7, py + size);
+                    ctx.lineTo(px - size*0.7, py + size);
+                    ctx.lineTo(px - size, py - size*0.4);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                else if (this.type === "magnet_item") {
+                    let size = 11 * scale;
+                    ctx.shadowColor = "#3b82f6";
+                    ctx.shadowBlur = 12;
+                    ctx.strokeStyle = "#3b82f6";
+                    ctx.lineWidth = 4 * scale;
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, Math.PI, 0, false);
+                    ctx.stroke();
+                }
+                else if (this.type === "slowmo_item") {
+                    let size = 11 * scale;
+                    ctx.shadowColor = "#f59e0b";
+                    ctx.shadowBlur = 12;
+                    ctx.fillStyle = "#f59e0b";
+                    ctx.beginPath();
+                    ctx.moveTo(px - size, py - size);
+                    ctx.lineTo(px + size, py - size);
+                    ctx.lineTo(px - size, py + size);
+                    ctx.lineTo(px + size, py + size);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // 3. Shockwave Class
+        class Shockwave {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 10 * scale;
+                this.maxRadius = 140 * scale;
+                this.alpha = 1.0;
+                this.active = true;
+            }
+            update() {
+                this.radius += 6 * scale;
+                this.alpha -= 0.04;
+                if (this.alpha <= 0) {
+                    this.active = false;
+                }
+            }
+            draw() {
+                if (!this.active) return;
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.strokeStyle = "#d946ef";
+                ctx.shadowColor = "#d946ef";
+                ctx.shadowBlur = 20;
+                ctx.lineWidth = 4 * scale;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // 4. Particle Class (Explosions)
+        class Particle {
+            constructor(x, y, color, isDeathSlow = false) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = (1.5 + Math.random() * 3.5) * scale;
+                let speedScale = isDeathSlow ? 0.15 : 1.0;
+                let speed = (2 + Math.random() * 6) * speedScale;
+                let angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 1.0;
+                this.decay = 0.015 + Math.random() * 0.035;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw() {
+                if (this.life <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 5. Background Dynamic Particles
+        class BackgroundParticle {
+            constructor() {
+                this.x = Math.random() * window.innerWidth;
+                this.y = Math.random() * window.innerHeight;
+                this.speed = 0.15 + Math.random() * 0.5;
+                this.size = (1 + Math.random() * 2) * scale;
+                this.alpha = 0.04 + Math.random() * 0.10;
+            }
+            update(pulseActive) {
+                // Reactive Background: accelerates 4x on pulse triggers
+                let actualSpeed = this.speed * (pulseActive ? 4.0 : 1.0);
+                this.y += actualSpeed;
+                if (this.y > window.innerHeight) {
+                    this.y = 0;
+                    this.x = Math.random() * window.innerWidth;
+                }
+            }
+            draw(pulseActive) {
+                ctx.save();
+                ctx.globalAlpha = this.alpha * (pulseActive ? 3.0 : 1.0);
+                ctx.fillStyle = pulseActive ? getTrackColor() : "#ffffff";
+                ctx.shadowColor = getTrackColor();
+                ctx.shadowBlur = pulseActive ? 5 : 0;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Core State
+        const gameState = {
+            currentScreen: "menu", // menu, playing, paused, gameover, victory
+            activeLevel: levelRegistry[1],
+            isEndless: false,
+            
+            player: null,
+            entities: [],
+            shockwaves: [],
+            particles: [],
+            bgParticles: [],
+            
+            gameSpeedMultiplier: 1.0,
+            rotationDirection: 1,
+            distanceTraveled: 0, // Cumulative exact path covered in radians
+            lastSpawnedDistance: 2.2, // Path distance spawned up to
+            progressPercent: 0,
+            coinsCollectedThisRun: 0,
+            coinCombo: 0,
+            comboScale: 1.0,
+            
+            activeShields: 0,
+            activeMagnetTimer: 0,
+            activeSlowmoTimer: 0,
+            
+            laserWarningTimer: 0,
+            laserFireTimer: 0,
+            
+            isDying: false,
+            deathTimer: 0,
+            spawnGraceTimer: 0, // Grace immunity timer to prevent instant spawn deaths
+            inputCooldown: 0,   // Prevent accidental click propagation on respawn
+            perfectTextTimer: 0, // Timer to display glorious "+2 PERFECT!" message
+            
+            bgPulseTimer: 0,
+            lastTapTime: 0
+        };
+
+        // Prepopulate space background stars
+        for (let i = 0; i < 60; i++) {
+            gameState.bgParticles.push(new BackgroundParticle());
+        }
+
+        function triggerMainScreenPulse() {
+            gameState.bgPulseTimer = 15;
+        }
+        setInterval(() => {
+            if (gameState.currentScreen === "menu") triggerMainScreenPulse();
+        }, 3000);
+
+        function createExplosionParticles(x, y, color, count = 20, slowmo = false) {
+            for (let i = 0; i < count; i++) {
+                gameState.particles.push(new Particle(x, y, color, slowmo));
+            }
+        }
+
+        function createScreenShake() {
+            canvas.style.transform = `translate(${(Math.random()-0.5)*15}px, ${(Math.random()-0.5)*15}px)`;
+            setTimeout(() => canvas.style.transform = "none", 150);
+        }
+
+        function startLevel(lvl, isEndless = false) {
+            gameState.currentScreen = "playing";
+            gameState.activeLevel = lvl;
+            gameState.isEndless = isEndless;
+            
+            gameState.player = new Player();
+            gameState.rotationDirection = (lvl.mechanics.reverseGravity) ? -1 : 1;
+            
+            // Clean slate - track populates dynamically on the fly
+            gameState.entities = [];
+            gameState.distanceTraveled = 0;
+            gameState.lastSpawnedDistance = 2.2; // Spawning starts comfortably ahead of starting position
+            
+            gameState.particles = [];
+            gameState.shockwaves = [];
+            gameState.progressPercent = 0;
+            gameState.coinsCollectedThisRun = 0;
+            gameState.coinCombo = 0;
+            gameState.comboScale = 1.0;
+            gameState.gameSpeedMultiplier = 1.0;
+            gameState.perfectTextTimer = 0;
+            
+            gameState.activeShields = 0;
+            gameState.activeMagnetTimer = 0;
+            gameState.activeSlowmoTimer = 0;
+            gameState.laserWarningTimer = 0;
+            gameState.laserFireTimer = 0;
+            gameState.isDying = false;
+            
+            // Input Cooldown blocks click-propagation on restart
+            gameState.inputCooldown = 15; 
+            gameState.spawnGraceTimer = 90; // IMMUNITY SYSTEM: Activate 90 frames of protection
+            
+            // Interface setups matching Image 1 Capsules
+            document.getElementById("main-menu").classList.add("opacity-0", "pointer-events-none");
+            
+            let hud = document.getElementById("game-hud");
+            hud.classList.remove("opacity-0", "pointer-events-none");
+            
+            document.getElementById("hud-level-title").innerText = isEndless ? "طور النجاة الأبدي" : `مستوى ${lvl.id}`;
+            document.getElementById("hud-level-tier").innerText = `(${lvl.tier})`;
+            
+            updateHUD();
+            
+            // Reset screens cleanly with scale animation
+            let go = document.getElementById("gameover-overlay");
+            go.classList.add("hidden", "scale-90");
+            go.classList.remove("flex", "scale-100");
+            
+            let vic = document.getElementById("victory-overlay");
+            vic.classList.add("hidden", "scale-90");
+            vic.classList.remove("flex", "scale-100");
+
+            updateScreenAestheticColors();
+        }
+
+        function updateHUD() {
+            document.getElementById("hud-coin-count").innerText = playerProgress.coins;
+        }
+
+        let lastTime = 0;
+        function gameLoop(time) {
+            let dt = (time - lastTime) / 16.666;
+            if (!dt || dt > 10) dt = 1;
+            lastTime = time;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let pulseActive = false;
+            if (gameState.bgPulseTimer > 0) {
+                gameState.bgPulseTimer -= dt;
+                pulseActive = true;
+            }
+
+            for (let bp of gameState.bgParticles) {
+                bp.update(pulseActive);
+                bp.draw(pulseActive);
+            }
+
+            if (gameState.currentScreen === "playing" || (gameState.currentScreen === "paused" && gameState.isDying)) {
+                updatePhysics(dt);
+                renderGameWorld();
+            } else if (gameState.currentScreen === "menu") {
+                renderMenuVisuals();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePhysics(dt) {
+            let lvl = gameState.activeLevel;
+            
+            // Decouple demise timer from visual slow-motion calculations.
+            if (gameState.isDying) {
+                gameState.deathTimer -= dt; // Subtract unscaled frames so death screen triggers in exactly 1.08s
+                dt *= 0.15; // Visually slow down player and particle updates
+                if (gameState.deathTimer <= 0) {
+                    actualGameOver();
+                }
+            }
+
+            // Decrement perfect display timer
+            if (gameState.perfectTextTimer > 0) {
+                gameState.perfectTextTimer -= dt;
+            }
+
+            // Decrement active spawn protection grace period
+            if (gameState.spawnGraceTimer > 0) {
+                gameState.spawnGraceTimer -= dt;
+            }
+
+            // Decrement active input cooldown
+            if (gameState.inputCooldown > 0) {
+                gameState.inputCooldown -= dt;
+            }
+
+            if (gameState.activeMagnetTimer > 0) gameState.activeMagnetTimer -= dt;
+            if (gameState.activeSlowmoTimer > 0) gameState.activeSlowmoTimer -= dt;
+
+            let finalSpeed = lvl.speed;
+            if (lvl.mechanics.speedSurge) {
+                if (gameState.progressPercent > 40 && gameState.progressPercent < 60) {
+                    finalSpeed *= 1.8;
+                    if (Math.random() > 0.8) createScreenShake();
+                }
+            }
+            if (lvl.mechanics.speedEscalation) {
+                finalSpeed += (0.00002 * gameState.progressPercent);
+            }
+            if (gameState.activeSlowmoTimer > 0) {
+                finalSpeed *= 0.45;
+            }
+
+            // Elastic updates using delta time
+            gameState.player.update(finalSpeed, gameState.rotationDirection, dt);
+            if (!gameState.isDying) {
+                gameState.distanceTraveled += finalSpeed * dt;
+            }
+
+            // Update border and background accents gradually as colors shift
+            if (gameState.isEndless && Math.floor(gameState.progressPercent) % 5 === 0) {
+                updateScreenAestheticColors();
+            }
+
+            // Added "gameState.entities.length < 12" and an explicit loop iteration guard
+            let maxPath = Math.PI * 2 * lvl.targetLaps;
+            let spawnAheadDistance = Math.PI * 2 * 1.5; // Spawn 1.5 laps ahead
+            let loopGuard = 0;
+            
+            while (gameState.lastSpawnedDistance - gameState.distanceTraveled < spawnAheadDistance && gameState.entities.length < 12 && loopGuard < 10) {
+                loopGuard++;
+                let nextDistance = gameState.lastSpawnedDistance + lvl.gap + (Math.random() * 0.4);
+                
+                // Do not spawn past level goal
+                if (!gameState.isEndless && nextDistance >= maxPath - 1.0) {
+                    break;
+                }
+                
+                gameState.lastSpawnedDistance = nextDistance;
+                
+                // Absolute angle on the periodic circle
+                let actualAngle = nextDistance * gameState.rotationDirection;
+                
+                let out = Math.random() > 0.5;
+                if (lvl.mechanics.alternatingMaze) {
+                    out = (gameState.entities.length % 2 === 0);
+                }
+                
+                let type = "obstacle";
+                if (lvl.mechanics.giantSpikes && Math.random() > 0.6) {
+                    type = "giant_obstacle";
+                }
+                
+                // CRITICAL LOGICAL BUG FIX #1: Prevent unavoidable double-lane obstacles.
+                // If a spike is spawned within 1.3 radians of the previous spike, force it into the SAME lane!
+                let lastSpike = null;
+                for (let j = gameState.entities.length - 1; j >= 0; j--) {
+                    let e = gameState.entities[j];
+                    if (e.type === "obstacle" || e.type === "giant_obstacle") {
+                        lastSpike = e;
+                        break;
+                    }
+                }
+                if (lastSpike) {
+                    let distDiff = nextDistance - lastSpike.distancePoint;
+                    if (distDiff < 1.3) {
+                        out = lastSpike.isOutside;
+                    }
+                }
+
+                if (!lvl.mechanics.coinStorm) {
+                    let ent = new Entity(actualAngle, type, out);
+                    ent.distancePoint = nextDistance;
+                    gameState.entities.push(ent);
+                }
+                
+                let collectAngle = (nextDistance - (lvl.gap / 2)) * gameState.rotationDirection;
+                let collectOut = Math.random() > 0.5;
+                
+                if (lvl.mechanics.coinStorm) {
+                    let ent1 = new Entity(collectAngle, "coin", collectOut);
+                    ent1.distancePoint = nextDistance - (lvl.gap / 2);
+                    gameState.entities.push(ent1);
+                    if (Math.random() > 0.7) {
+                        let ent2 = new Entity(collectAngle + 0.1 * gameState.rotationDirection, "super_coin", collectOut, 140);
+                        ent2.distancePoint = nextDistance - (lvl.gap / 2) + 0.1;
+                        gameState.entities.push(ent2);
+                    }
+                } else {
+                    if (Math.random() > 0.4) {
+                        let ent = new Entity(collectAngle, "coin", collectOut);
+                        ent.distancePoint = nextDistance - (lvl.gap / 2);
+                        gameState.entities.push(ent);
+                    }
+                    if (Math.random() > 0.85) {
+                        let ent = new Entity(collectAngle + 0.05 * gameState.rotationDirection, "super_coin", collectOut, 140);
+                        ent.distancePoint = nextDistance - (lvl.gap / 2) + 0.05;
+                        gameState.entities.push(ent);
+                    }
+                    if (lvl.mechanics.hasShields && Math.random() > 0.88) {
+                        let ent = new Entity(collectAngle - 0.05 * gameState.rotationDirection, "shield_item", collectOut);
+                        ent.distancePoint = nextDistance - (lvl.gap / 2) - 0.05;
+                        gameState.entities.push(ent);
+                    }
+                    if (lvl.mechanics.hasMagnet && Math.random() > 0.88) {
+                        let ent = new Entity(collectAngle - 0.05 * gameState.rotationDirection, "magnet_item", collectOut);
+                        ent.distancePoint = nextDistance - (lvl.gap / 2) - 0.05;
+                        gameState.entities.push(ent);
+                    }
+                    if (lvl.mechanics.slowMoItem && Math.random() > 0.85) {
+                        let ent = new Entity(collectAngle - 0.05 * gameState.rotationDirection, "slowmo_item", collectOut);
+                        ent.distancePoint = nextDistance - (lvl.gap / 2) - 0.05;
+                        gameState.entities.push(ent);
+                    }
+                }
+            }
+
+            let currentPathCovered = gameState.distanceTraveled;
+
+            if (!gameState.isEndless) {
+                gameState.progressPercent = Math.min((currentPathCovered / maxPath) * 100, 100);
+                if (gameState.progressPercent >= 100) {
+                    triggerVictory();
+                    return;
+                }
+            } else {
+                gameState.progressPercent = currentPathCovered / (Math.PI * 2) * 10;
+                let currentTotalLaps = Math.floor(currentPathCovered / (Math.PI * 2));
+                lvl.speed = 0.035 + (currentTotalLaps * 0.003);
+                if (currentTotalLaps > 0 && currentTotalLaps % 3 === 0 && Math.floor(gameState.progressPercent) % 30 === 0) {
+                    gameState.rotationDirection *= -1;
+                    createScreenShake();
+                    audio.playShieldBreak();
+                }
+            }
+
+            if (lvl.mechanics.lasers) {
+                gameState.laserWarningTimer += dt;
+                if (gameState.laserWarningTimer > 280) {
+                    gameState.laserFireTimer = 45;
+                    gameState.laserWarningTimer = 0;
+                    createScreenShake();
+                    audio.playShieldBreak();
+                }
+                if (gameState.laserFireTimer > 0) {
+                    gameState.laserFireTimer -= dt;
+                    let pY = cy + Math.sin(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+                    if (Math.abs(pY - cy) < 18 * scale && !gameState.isDying && gameState.spawnGraceTimer <= 0) {
+                        triggerDeath();
+                    }
+                }
+            }
+
+            for (let i = gameState.entities.length - 1; i >= 0; i--) {
+                let ent = gameState.entities[i];
+                ent.update(finalSpeed, gameState.rotationDirection);
+
+                let dist = (ent.isOutside ? 155 : 115) * scale;
+                ent.x = cx + Math.cos(ent.angle) * dist;
+                ent.y = cy + Math.sin(ent.angle) * dist;
+
+                // UX warning distance adjustment: 0.65 radians allows fair time for user reflex
+                if (lvl.mechanics.shiftingSpikes && ent.type === "obstacle" && !ent.shifted) {
+                    let dAngle = Math.abs(gameState.player.absoluteAngle - ent.angle);
+                    if (dAngle < 0.65) {
+                        ent.isOutside = !ent.isOutside;
+                        ent.shifted = true;
+                        createExplosionParticles(ent.x, ent.y, "#ff0055", 6);
+                    }
+                }
+
+                if (gameState.activeMagnetTimer > 0 && (ent.type === "coin" || ent.type === "super_coin")) {
+                    let pX = cx + Math.cos(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+                    let pY = cy + Math.sin(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+                    let distanceToPlayer = Math.hypot(pX - ent.x, pY - ent.y);
+                    
+                    let maxRange = (50 + (playerProgress.upgrades.magnet * 40)) * scale;
+                    if (distanceToPlayer < maxRange) {
+                        ent.angle += (gameState.player.absoluteAngle - ent.angle) * 0.15;
+                        ent.isOutside = gameState.player.isOutside;
+                    }
+                }
+
+                // Check collisions on absolute helix dimension
+                let diffAngle = Math.abs(gameState.player.absoluteAngle - ent.angle);
+
+                if (diffAngle < 0.15 && gameState.player.isOutside === ent.isOutside && ent.active && !gameState.isDying) {
+                    if (ent.type === "obstacle" || ent.type === "giant_obstacle") {
+                        if (gameState.spawnGraceTimer > 0) {
+                            continue;
+                        }
+                        
+                        if (gameState.activeShields > 0) {
+                            gameState.activeShields--;
+                            ent.active = false;
+                            createScreenShake();
+                            createExplosionParticles(ent.x, ent.y, "#10b981", 15);
+                            audio.playShieldBreak();
+                            updateHUD();
+                        } else {
+                            triggerDeath();
+                        }
+                    } 
+                    else if (ent.type === "coin") {
+                        ent.active = false;
+                        gameState.coinCombo++;
+                        gameState.comboScale = 1.6;
+                        
+                        // Win immediately if the combo target of 5 is achieved in Level 19 Combo Challenge
+                        if (lvl.mechanics.comboChallenge && gameState.coinCombo >= 5) {
+                            triggerVictory();
+                            return;
+                        }
+                        
+                        let mult = 1.0;
+                        if (playerProgress.upgrades.multiplier === 2) mult = 1.5;
+                        if (playerProgress.upgrades.multiplier === 3) mult = 2.0;
+                        
+                        let collected = Math.round(1 * mult);
+                        gameState.coinsCollectedThisRun += collected;
+                        playerProgress.coins += collected;
+                        saveProgress();
+                        
+                        let pitch = 1.0 + (gameState.coinCombo * 0.08);
+                        audio.playCoin(pitch);
+                        
+                        createExplosionParticles(ent.x, ent.y, "#ffd700", 8);
+                        updateHUD();
+                    } 
+                    else if (ent.type === "super_coin") {
+                        ent.active = false;
+                        gameState.coinCombo++; // Let super coins elegantly increment combo progression as well
+                        gameState.comboScale = 1.6;
+
+                        if (lvl.mechanics.comboChallenge && gameState.coinCombo >= 5) {
+                            triggerVictory();
+                            return;
+                        }
+                        
+                        let mult = 1.0;
+                        if (playerProgress.upgrades.multiplier === 2) mult = 1.5;
+                        if (playerProgress.upgrades.multiplier === 3) mult = 2.0;
+                        
+                        let collected = Math.round(10 * mult);
+                        gameState.coinsCollectedThisRun += collected;
+                        playerProgress.coins += collected;
+                        saveProgress();
+                        
+                        audio.playSuperCoin();
+                        createScreenShake();
+                        
+                        gameState.shockwaves.push(new Shockwave(ent.x, ent.y));
+                        createExplosionParticles(ent.x, ent.y, "#d946ef", 25);
+                        
+                        for (let other of gameState.entities) {
+                            if (other.type === "obstacle") {
+                                let d = Math.abs(other.angle - ent.angle);
+                                if (d < 0.8) {
+                                    other.active = false;
+                                    createExplosionParticles(other.x, other.y, "#ff0055", 6);
+                                }
+                            }
+                        }
+                        updateHUD();
+                    }
+                    else if (ent.type === "shield_item") {
+                        ent.active = false;
+                        let shieldAmt = playerProgress.upgrades.shield;
+                        gameState.activeShields = Math.min(gameState.activeShields + shieldAmt, 2);
+                        audio.playSuperCoin();
+                        createExplosionParticles(ent.x, ent.y, "#10b981", 15);
+                        updateHUD();
+                    }
+                    else if (ent.type === "magnet_item") {
+                        ent.active = false;
+                        gameState.activeMagnetTimer = 360;
+                        audio.playSuperCoin();
+                        createExplosionParticles(ent.x, ent.y, "#3b82f6", 15);
+                    }
+                    else if (ent.type === "slowmo_item") {
+                        ent.active = false;
+                        gameState.activeSlowmoTimer = 300;
+                        audio.playSuperCoin();
+                        createExplosionParticles(ent.x, ent.y, "#f59e0b", 15);
+                    }
+                }
+
+                // CRITICAL LOGICAL BUG FIX #2: Missed coin check now verified against absolute cumulative distance traveled.
+                // This completely prevents future coins from triggering combo reset.
+                if (ent.wasCoin && ent.active && !gameState.isDying) {
+                    let passedDistance = gameState.distanceTraveled - ent.distancePoint;
+                    if (passedDistance > 0.3 && !ent.missed) {
+                        ent.missed = true;
+                        gameState.coinCombo = 0;
+                    }
+                }
+
+                // Pruning: Adjusted boundary to exactly Math.PI (half lap) 
+                let passed = false;
+                let relativeDiff = (gameState.player.absoluteAngle - ent.angle) * gameState.rotationDirection;
+                if (relativeDiff > Math.PI) {
+                    passed = true;
+                }
+                
+                if (passed && ent.active) {
+                    gameState.entities.splice(i, 1);
+                }
+            }
+
+            gameState.entities = gameState.entities.filter(e => e.active);
+            
+            for (let i = gameState.shockwaves.length - 1; i >= 0; i--) {
+                gameState.shockwaves[i].update();
+                if (!gameState.shockwaves[i].active) gameState.shockwaves.splice(i, 1);
+            }
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                gameState.particles[i].update();
+                if (gameState.particles[i].life <= 0) gameState.particles.splice(i, 1);
+            }
+
+            if (gameState.comboScale > 1.0) {
+                gameState.comboScale -= 0.05;
+            } else {
+                gameState.comboScale = 1.0;
+            }
+
+            if (lvl.mechanics.reverseAtHalf && Math.abs(gameState.progressPercent - 50) < 0.8) {
+                gameState.rotationDirection *= -1;
+                lvl.mechanics.reverseAtHalf = false;
+                createScreenShake();
+                audio.playShieldBreak();
+            }
+            
+            // CRITICAL BUG FIX #3: Added "!gameState.isDying" protection to prevent erratic screen tremors during slow-mo deaths
+            if (lvl.mechanics.boss2 && Math.random() > 0.7 && !gameState.isDying) {
+                createScreenShake();
+                if (Math.random() > 0.992) {
+                    gameState.rotationDirection *= -1;
+                }
+            }
+        }
+
+        function renderGameWorld() {
+            let lvl = gameState.activeLevel;
+            
+            let pulseOffset = 0;
+            if (lvl.mechanics.pulsingOrbit) {
+                pulseOffset = Math.sin(Date.now() / 250) * 15;
+            }
+
+            let midR = (135 + pulseOffset) * scale;
+            
+            gameState.player.innerRadius = 115 + pulseOffset;
+            gameState.player.outerRadius = 155 + pulseOffset;
+
+            // DRAW TRACK (Shifts colors dynamically based on Completed Loops!)
+            if (!lvl.mechanics.invisibleTrack) {
+                ctx.save();
+                
+                // Base Pink/Adaptive track with vibrant neon glow
+                let activeTrackColor = getTrackColor();
+                ctx.shadowColor = activeTrackColor;
+                ctx.shadowBlur = 15;
+                ctx.lineWidth = 4 * scale;
+                ctx.strokeStyle = activeTrackColor;
+                ctx.beginPath();
+                ctx.arc(cx, cy, midR, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // PROGRESS OVERLAY (Glowing Cyan progress trail directly sweeping the circle)
+                if (gameState.progressPercent > 0 && !gameState.isEndless) {
+                    ctx.shadowColor = "#00f3ff";
+                    ctx.strokeStyle = "#00f3ff";
+                    ctx.lineWidth = 5 * scale;
+                    let progressAngle = (gameState.progressPercent / 100) * Math.PI * 2;
+                    let anticlockwise = gameState.rotationDirection === -1;
+                    ctx.beginPath();
+                    // Sweeps dynamically corresponding to the absolute direction of motion
+                    ctx.arc(cx, cy, midR, -Math.PI / 2, -Math.PI / 2 + progressAngle * gameState.rotationDirection, anticlockwise);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Draw Central Circle Shield Indicator or Spawning Shield Ring
+            if (gameState.spawnGraceTimer > 0) {
+                ctx.save();
+                ctx.shadowColor = "#00f3ff";
+                ctx.shadowBlur = 15;
+                ctx.strokeStyle = "#00f3ff";
+                ctx.lineWidth = 2 * scale;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(cx, cy, midR + 25*scale, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Draw elegant central protective prompt
+                ctx.fillStyle = "rgba(0, 243, 255, 0.15)";
+                ctx.beginPath();
+                ctx.arc(cx, cy, midR - 10*scale, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = "#00f3ff";
+                ctx.textAlign = "center";
+                ctx.font = `bold ${Math.round(18 * scale)}px 'Cairo'`;
+                ctx.fillText("درع الحماية مؤمن 🛡️", cx, cy - 5*scale);
+                ctx.restore();
+            }
+
+            // Draw center HUD circular stats
+            ctx.save();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.01)";
+            ctx.beginPath();
+            ctx.arc(cx, cy, midR * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            if (gameState.coinCombo > 1) {
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = `900 ${Math.round(26 * scale * gameState.comboScale)}px 'Cairo'`;
+                ctx.fillStyle = "#ffd700";
+                ctx.fillText(`${gameState.coinCombo}x COMBO`, cx, cy + 15 * scale);
+            }
+
+            // Explicit progress tracker for Level 19 (Combo Challenge) displayed elegantly in the center
+            if (lvl.mechanics.comboChallenge) {
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.font = `900 ${Math.round(18 * scale)}px 'Cairo'`;
+                ctx.fillStyle = "#00f3ff";
+                ctx.fillText(`التحدي: كومبو ${gameState.coinCombo} / 5`, cx, cy - 25 * scale);
+            }
+
+            // PERFECT JUMP GOLDEN ALERT DISPLAY
+            if (gameState.perfectTextTimer > 0) {
+                ctx.save();
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                
+                // Add scaling/breathing animation to "PERFECT" text
+                let scaleFactor = 1.0 + Math.sin(gameState.perfectTextTimer * 0.25) * 0.15;
+                ctx.font = `900 ${Math.round(28 * scale * scaleFactor)}px 'Cairo'`;
+                ctx.fillStyle = "#ffd700";
+                ctx.shadowColor = "#f59e0b";
+                ctx.shadowBlur = 20;
+                
+                ctx.fillText("✨ PERFECT! +2 💰", cx, cy - 50 * scale);
+                ctx.restore();
+            }
+            ctx.restore();
+
+            // Draw Entities
+            for (let ent of gameState.entities) {
+                // Calculate position coordinates BEFORE any blindfold occlusion continue check 
+                let dist = (ent.isOutside ? 155 : 115) * scale;
+                ent.x = cx + Math.cos(ent.angle) * dist;
+                ent.y = cy + Math.sin(ent.angle) * dist;
+
+                let shouldDraw = true;
+                if (lvl.mechanics.blindfold && (ent.type === "obstacle" || ent.type === "giant_obstacle")) {
+                    let d = Math.abs(gameState.player.absoluteAngle - ent.angle);
+                    if (d < 0.45) {
+                        shouldDraw = false; 
+                    }
+                }
+                
+                if (shouldDraw) {
+                    ent.draw();
+                }
+            }
+
+            // Draw Player
+            gameState.player.draw();
+
+            // Draw Shockwaves & Particles
+            for (let sw of gameState.shockwaves) sw.draw();
+            for (let p of gameState.particles) p.draw();
+
+            // Laser Hazard Graphics
+            if (lvl.mechanics.lasers) {
+                if (gameState.laserWarningTimer > 200) {
+                    ctx.save();
+                    
+                    // Laser Warning Screen Flash for alert feedback
+                    ctx.fillStyle = 'rgba(255, 0, 85, 0.05)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.strokeStyle = Math.floor(Date.now() / 100) % 2 === 0 ? "rgba(255, 0, 85, 0.8)" : "rgba(255, 0, 85, 0.1)";
+                    ctx.lineWidth = 2 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(0, cy);
+                    ctx.lineTo(canvas.width, cy);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                if (gameState.laserFireTimer > 0) {
+                    ctx.save();
+                    ctx.shadowColor = "#ff0055";
+                    ctx.shadowBlur = 20;
+                    ctx.strokeStyle = "#ff0055";
+                    ctx.lineWidth = 20 * scale;
+                    ctx.globalAlpha = 0.8;
+                    ctx.beginPath();
+                    ctx.moveTo(0, cy);
+                    ctx.lineTo(canvas.width, cy);
+                    ctx.stroke();
+                    
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 4 * scale;
+                    ctx.beginPath();
+                    ctx.moveTo(0, cy);
+                    ctx.lineTo(canvas.width, cy);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            // Fog of war
+            if (lvl.mechanics.fog) {
+                ctx.save();
+                ctx.fillStyle = "rgba(3, 3, 7, 0.95)";
+                
+                let pX = cx + Math.cos(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+                let pY = cy + Math.sin(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+                let radius = 110 * scale;
+
+                ctx.beginPath();
+                ctx.rect(0, 0, canvas.width, canvas.height);
+                ctx.arc(pX, pY, radius, 0, Math.PI * 2, true);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let menuOrbitAngle = 0;
+        function renderMenuVisuals() {
+            menuOrbitAngle += 0.01;
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 0, 85, 0.12)";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 180 * scale, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            let px = cx + Math.cos(menuOrbitAngle) * 180 * scale;
+            let py = cy + Math.sin(menuOrbitAngle) * 180 * scale;
+            ctx.fillStyle = "rgba(255, 0, 85, 0.35)";
+            ctx.shadowColor = "#ff0055";
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(px, py, 20 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function triggerDeath() {
+            if (gameState.isDying) return;
+            gameState.isDying = true;
+            gameState.deathTimer = 65; 
+            
+            let pX = cx + Math.cos(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+            let pY = cy + Math.sin(gameState.player.absoluteAngle) * gameState.player.distance * scale;
+            
+            createExplosionParticles(pX, pY, "#ff0055", 40, true);
+            createScreenShake();
+            audio.playDeath();
+        }
+
+        function actualGameOver() {
+            gameState.currentScreen = "gameover";
+            
+            document.getElementById("game-hud").classList.add("opacity-0", "pointer-events-none");
+            
+            let panel = document.getElementById("gameover-overlay");
+            panel.classList.remove("hidden");
+            panel.classList.add("flex");
+            setTimeout(() => panel.classList.add("scale-100"), 50);
+
+            document.getElementById("go-stat-progress").innerText = `${Math.floor(gameState.progressPercent)}%`;
+            document.getElementById("go-stat-coins").innerText = `+${gameState.coinsCollectedThisRun}`;
+
+            let nearMissBanner = document.getElementById("near-miss-banner");
+            // Near-Miss psychology trigger for death at >= 85% progress
+            if (gameState.progressPercent >= 85 && !gameState.isEndless) {
+                nearMissBanner.classList.remove("hidden");
+                document.getElementById("near-miss-text").innerText = `يا بطل! لقد تدمر جزيئك عند ${Math.floor(gameState.progressPercent)}% من المسار! تفاديت كل الصعاب وكنت على بعد خطوة واحدة فقط من النصر.. أعد المحاولة فوراً!`;
+            } else {
+                nearMissBanner.classList.add("hidden");
+            }
+        }
+
+        function triggerVictory() {
+            gameState.currentScreen = "victory";
+            
+            let winBonus = 50;
+            playerProgress.coins += winBonus;
+            
+            let currentId = gameState.activeLevel.id;
+            if (currentId < 30 && playerProgress.highestLevelUnlocked === currentId) {
+                playerProgress.highestLevelUnlocked = currentId + 1;
+            }
+            saveProgress();
+
+            document.getElementById("game-hud").classList.add("opacity-0", "pointer-events-none");
+            
+            let panel = document.getElementById("victory-overlay");
+            panel.classList.remove("hidden");
+            panel.classList.add("flex");
+            setTimeout(() => panel.classList.add("scale-100"), 50);
+
+            document.getElementById("vic-stat-coins").innerText = `+${winBonus}`;
+            
+            createExplosionParticles(cx, cy, "#10b981", 50);
+            audio.playSuperCoin();
+        }
+
+        function handlePlayerJumpInput() {
+            // Check inputCooldown to block spamming clicks during transition
+            if (gameState.currentScreen === "playing" && !gameState.isDying && gameState.inputCooldown <= 0) {
+                let lvl = gameState.activeLevel;
+                
+                if (lvl.mechanics.reversedControls) {
+                    let now = Date.now();
+                    let diff = now - gameState.lastTapTime;
+                    gameState.lastTapTime = now;
+                    if (diff > 300) {
+                        return;
+                    }
+                }
+                
+                gameState.player.jump();
+            }
+        }
+
+        // Tap Handlers
+        window.addEventListener("mousedown", (e) => {
+            // DOPAMINE FLOW STATE: Instant restart on click anywhere during game-over
+            if (gameState.currentScreen === "gameover") {
+                startLevel(gameState.activeLevel, gameState.isEndless);
+                return;
+            }
+            if (e.target.tagName === "CANVAS") {
+                handlePlayerJumpInput();
+            }
+        });
+        window.addEventListener("touchstart", (e) => {
+            // DOPAMINE FLOW STATE: Instant restart on click anywhere during game-over
+            if (gameState.currentScreen === "gameover") {
+                startLevel(gameState.activeLevel, gameState.isEndless);
+                return;
+            }
+            if (e.target.tagName === "CANVAS") {
+                handlePlayerJumpInput();
+            }
+        });
+
+        // Keyboard Controls
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                if (gameState.currentScreen === "gameover") {
+                    startLevel(gameState.activeLevel, gameState.isEndless);
+                    return;
+                }
+                handlePlayerJumpInput();
+            }
+        });
+
+        // Core Play Campaigns Action
+        document.getElementById("play-campaign-btn").addEventListener("click", () => {
+            let m = document.getElementById("level-modal");
+            m.classList.remove("hidden");
+            m.classList.add("flex");
+            setTimeout(() => m.classList.add("scale-100"), 50);
+            renderLevelsSelector();
+        });
+
+        document.getElementById("play-endless-btn").addEventListener("click", () => {
+            startLevel(levelRegistry[0], true);
+        });
+
+        document.getElementById("close-level-modal").addEventListener("click", () => {
+            let m = document.getElementById("level-modal");
+            m.classList.remove("scale-100");
+            m.classList.add("scale-90");
+            setTimeout(() => m.classList.add("hidden"), 300);
+        });
+
+        document.getElementById("how-to-play-btn").addEventListener("click", () => {
+            let m = document.getElementById("help-modal");
+            m.classList.remove("hidden");
+            setTimeout(() => m.classList.add("scale-100"), 50);
+        });
+        document.getElementById("close-help-modal").addEventListener("click", () => {
+            let m = document.getElementById("help-modal");
+            m.classList.remove("scale-100");
+            setTimeout(() => m.classList.add("hidden"), 300);
+        });
+
+        document.getElementById("sound-toggle-btn").addEventListener("click", () => {
+            let muted = audio.toggleMute();
+            let icon = document.getElementById("sound-icon");
+            if (muted) {
+                icon.className = "fa-solid fa-volume-xmark";
+                document.getElementById("sound-toggle-btn").classList.add("text-red-500");
+            } else {
+                icon.className = "fa-solid fa-volume-high";
+                document.getElementById("sound-toggle-btn").classList.remove("text-red-500");
+            }
+        });
+
+        // Pause / Quit from game HUD directly
+        document.getElementById("hud-back-menu-btn").addEventListener("click", () => {
+            exitToMainMenu();
+        });
+
+        // GameOver Actions
+        document.getElementById("go-retry-btn").addEventListener("click", (e) => {
+            e.stopPropagation(); // Avoid triggering double restarts from window click
+            startLevel(gameState.activeLevel, gameState.isEndless);
+        });
+        document.getElementById("go-menu-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            exitToMainMenu();
+        });
+
+        // Victory Actions
+        document.getElementById("vic-next-btn").addEventListener("click", () => {
+            let nextId = gameState.activeLevel.id + 1;
+            if (nextId <= 30) {
+                startLevel(levelRegistry[nextId], false);
+            } else {
+                exitToMainMenu();
+            }
+        });
+        document.getElementById("vic-menu-btn").addEventListener("click", () => {
+            exitToMainMenu();
+        });
+
+        // Reset All Progress Button
+        document.getElementById("reset-progress-btn").addEventListener("click", () => {
+            if (confirm("هل أنت متأكد من رغبتك في تصفير تقدمك بالكامل ومسح كل الكوينز والترقيات؟")) {
+                localStorage.removeItem("death_circle_progress");
+                playerProgress = {
+                    coins: 0,
+                    highestLevelUnlocked: 1,
+                    endlessHighScore: 0,
+                    equippedSkin: "classic",
+                    unlockedSkins: ["classic"],
+                    upgrades: {
+                        multiplier: 1,
+                        shield: 1,
+                        magnet: 1
+                    }
+                };
+                saveProgress();
+                exitToMainMenu();
+                audio.playShieldBreak();
+            }
+        });
+
+        function exitToMainMenu() {
+            gameState.currentScreen = "menu";
+            
+            document.getElementById("gameover-overlay").classList.add("hidden", "scale-90");
+            document.getElementById("gameover-overlay").classList.remove("scale-100");
+            document.getElementById("victory-overlay").classList.add("hidden", "scale-90");
+            document.getElementById("victory-overlay").classList.remove("scale-100");
+            document.getElementById("game-hud").classList.add("opacity-0", "pointer-events-none");
+            
+            document.getElementById("main-menu").classList.remove("opacity-0", "pointer-events-none");
+            document.getElementById("menu-coin-count").innerText = playerProgress.coins;
+            document.getElementById("menu-level-status").innerText = `المستوى الحالي: ${playerProgress.highestLevelUnlocked} / 30`;
+
+            // Reset borders to traditional neon pink
+            let borderEl = document.getElementById("screen-edge-border");
+            let bgEl = document.getElementById("ambient-bg-aura");
+            if (borderEl && bgEl) {
+                borderEl.style.borderColor = "#ff0055";
+                borderEl.style.boxShadow = "inset 0 0 30px rgba(255, 0, 85, 0.4), 0 0 15px rgba(255, 0, 85, 0.3)";
+                bgEl.style.backgroundImage = "radial-gradient(circle, rgba(255, 0, 85, 0.1) 0%, #000000 100%)";
+            }
+        }
+
+        function renderLevelsSelector() {
+            let grid = document.getElementById("levels-grid");
+            grid.innerHTML = "";
+            
+            for (let i = 1; i <= 30; i++) {
+                let lvl = levelRegistry[i];
+                let isUnlocked = i <= playerProgress.highestLevelUnlocked;
+                
+                let card = document.createElement("button");
+                card.className = `p-4 rounded-2xl flex flex-col items-center justify-center border-2 transition-all aspect-square ${
+                    isUnlocked 
+                        ? "bg-neutral-900 border-cyan-400 hover:bg-cyan-500/10 active:scale-95 text-white shadow-[0_0_10px_rgba(0,243,255,0.2)]" 
+                        : "bg-black/40 border-neutral-800 text-gray-700 cursor-not-allowed"
+                }`;
+                
+                if (isUnlocked) {
+                    card.innerHTML = `
+                        <span class="text-3xl font-black text-cyan-400">${i}</span>
+                        <span class="text-[10px] text-gray-300 font-bold mt-1 text-center truncate w-full">${lvl.name}</span>
+                    `;
+                    card.addEventListener("click", () => {
+                        let m = document.getElementById("level-modal");
+                        m.classList.remove("scale-100");
+                        m.classList.add("scale-90", "hidden");
+                        startLevel(lvl, false);
+                    });
+                } else {
+                    card.innerHTML = `
+                        <i class="fa-solid fa-lock text-xl"></i>
+                        <span class="text-[10px] text-gray-600 font-bold mt-1">مغلق</span>
+                    `;
+                }
+                
+                grid.appendChild(card);
+            }
+        }
+
+        // Shop Controller setup
+        document.getElementById("shop-btn").addEventListener("click", () => {
+            let s = document.getElementById("shop-modal");
+            s.classList.remove("hidden");
+            s.classList.add("flex");
+            setTimeout(() => s.classList.add("scale-100"), 50);
+            document.getElementById("shop-coin-balance").innerText = playerProgress.coins;
+            renderShopSkins();
+            renderShopUpgrades();
+        });
+        document.getElementById("close-shop-modal").addEventListener("click", () => {
+            let s = document.getElementById("shop-modal");
+            s.classList.remove("scale-100");
+            s.classList.add("scale-90");
+            setTimeout(() => s.classList.add("hidden"), 300);
+            document.getElementById("menu-coin-count").innerText = playerProgress.coins;
+        });
+
+        // Tab switches
+        document.getElementById("tab-skins-btn").addEventListener("click", () => {
+            document.getElementById("tab-skins-btn").classList.add("border-purple-500", "text-purple-400");
+            document.getElementById("tab-skins-btn").classList.remove("border-transparent", "text-gray-400");
+            document.getElementById("tab-upgrades-btn").classList.remove("border-purple-500", "text-purple-400");
+            document.getElementById("tab-upgrades-btn").classList.add("border-transparent", "text-gray-400");
+            
+            document.getElementById("shop-skins-container").classList.remove("hidden");
+            document.getElementById("shop-skins-container").classList.add("grid");
+            document.getElementById("shop-upgrades-container").classList.add("hidden");
+            document.getElementById("shop-upgrades-container").classList.remove("flex");
+        });
+
+        document.getElementById("tab-upgrades-btn").addEventListener("click", () => {
+            document.getElementById("tab-upgrades-btn").classList.add("border-purple-500", "text-purple-400");
+            document.getElementById("tab-upgrades-btn").classList.remove("border-transparent", "text-gray-400");
+            document.getElementById("tab-skins-btn").classList.remove("border-purple-500", "text-purple-400");
+            document.getElementById("tab-skins-btn").classList.add("border-transparent", "text-gray-400");
+            
+            document.getElementById("shop-skins-container").classList.add("hidden");
+            document.getElementById("shop-skins-container").classList.remove("grid");
+            document.getElementById("shop-upgrades-container").classList.remove("hidden");
+            document.getElementById("shop-upgrades-container").classList.add("flex");
+        });
+
+        function renderShopSkins() {
+            let container = document.getElementById("shop-skins-container");
+            container.innerHTML = "";
+            
+            for (let [id, skin] of Object.entries(skinsRegistry)) {
+                let isUnlocked = playerProgress.unlockedSkins.includes(id);
+                let isEquipped = playerProgress.equippedSkin === id;
+                
+                let card = document.createElement("div");
+                card.className = "p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex justify-between items-center";
+                
+                let actionBtnHTML = "";
+                if (isEquipped) {
+                    actionBtnHTML = `<span class="bg-cyan-500/20 border border-cyan-400 text-cyan-400 text-xs px-3 py-1.5 rounded-full font-bold">مجهز حالياً</span>`;
+                } else if (isUnlocked) {
+                    actionBtnHTML = `<button onclick="equipSkin('${id}')" class="bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-xl text-xs font-bold transition">تجهيز</button>`;
+                } else {
+                    actionBtnHTML = `
+                        <button onclick="buySkin('${id}')" class="bg-gradient-to-r from-yellow-500 to-amber-600 hover:scale-105 active:scale-95 transition text-black font-black text-xs px-4 py-1.5 rounded-xl flex items-center gap-1">
+                            <i class="fa-solid fa-coins"></i> ${skin.cost}
+                        </button>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center border" style="background-color: ${skin.color}20; border-color: ${skin.color}">
+                            <div class="w-4 h-4 rounded-full" style="background-color: ${skin.color}"></div>
+                        </div>
+                        <div class="flex flex-col text-right">
+                            <span class="font-bold text-sm text-white">${skin.name}</span>
+                            <span class="text-[10px] text-gray-400">${skin.desc}</span>
+                        </div>
+                    </div>
+                    <div>
+                        ${actionBtnHTML}
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            }
+        }
+
+        window.equipSkin = function(id) {
+            playerProgress.equippedSkin = id;
+            saveProgress();
+            renderShopSkins();
+        };
+
+        window.buySkin = function(id) {
+            let skin = skinsRegistry[id];
+            if (playerProgress.coins >= skin.cost) {
+                playerProgress.coins -= skin.cost;
+                playerProgress.unlockedSkins.push(id);
+                playerProgress.equippedSkin = id;
+                saveProgress();
+                audio.playSuperCoin();
+                document.getElementById("shop-coin-balance").innerText = playerProgress.coins;
+                renderShopSkins();
+            } else {
+                audio.playShieldBreak();
+            }
+        };
+
+        function renderShopUpgrades() {
+            let container = document.getElementById("shop-upgrades-container");
+            container.innerHTML = "";
+            
+            const upgradesList = [
+                {
+                    key: "multiplier",
+                    name: "مضاعف الذهب طوال اللعبة",
+                    desc: "الحصول على أرباح مكررة مع كل عملة تجمعها!",
+                    levels: [
+                        { lvl: 1, text: "مستوى 1: مضاعف عادي (1x)", cost: 0 },
+                        { lvl: 2, text: "مستوى 2: مضاعف متوسط (1.5x)", cost: 200 },
+                        { lvl: 3, text: "مستوى 3: مضاعف أسطوري (2.0x)", cost: 450 }
+                    ]
+                },
+                {
+                    key: "shield",
+                    name: "متانة درع الحماية",
+                    desc: "شحن دروع الحماية لتتحمل أكثر من ضربة عائق متتالية قبل أن يتدمر جزيئك!",
+                    levels: [
+                        { lvl: 1, text: "مستوى 1: يتحمل ضربة واحدة فقط", cost: 0 },
+                        { lvl: 2, text: "مستوى 2: حماية ممتدة لضربتين كاملتين وراء بعضهما", cost: 300 }
+                    ]
+                },
+                {
+                    key: "magnet",
+                    name: "مستشعر ومغناطيس الكوينز",
+                    desc: "يوسع دائرة الجذب لشفط العملات تلقائياً نحو حركتك دون الحاجة للتقرب منها!",
+                    levels: [
+                        { lvl: 1, text: "مستوى 1: مدى جذب عادي (65 بيكسل)", cost: 0 },
+                        { lvl: 2, text: "مستوى 2: مدى جذب متوسط (110 بيكسل)", cost: 250 },
+                        { lvl: 3, text: "مستوى 3: مغناطيس كونية جبار (150 بيكسل)", cost: 500 }
+                    ]
+                }
+            ];
+
+            for (let up of upgradesList) {
+                let currentLvl = playerProgress.upgrades[up.key];
+                let nextLvlData = up.levels.find(l => l.lvl === currentLvl + 1);
+                
+                let card = document.createElement("div");
+                card.className = "p-4 rounded-2xl bg-neutral-900 border border-neutral-800 flex flex-col md:flex-row md:justify-between md:items-center gap-4 text-right";
+                
+                let buttonHTML = "";
+                if (nextLvlData) {
+                    buttonHTML = `
+                        <button onclick="buyUpgrade('${up.key}', ${nextLvlData.cost})" class="bg-gradient-to-r from-purple-500 to-indigo-600 hover:scale-105 active:scale-95 transition px-5 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1 shrink-0">
+                            ترقية للمستوى ${nextLvlData.lvl} <span class="bg-black/20 px-2 py-0.5 rounded ml-1 font-mono text-[10px]"><i class="fa-solid fa-coins text-yellow-400"></i> ${nextLvlData.cost}</span>
+                        </button>
+                    `;
+                } else {
+                    buttonHTML = `<span class="bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 text-xs px-4 py-2 rounded-xl font-bold block text-center shrink-0">الترقية قصوى (MAX)</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-bold text-sm text-purple-400 flex items-center gap-2">
+                            ${up.name}
+                            <span class="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full font-bold">المستوى الحالي: ${currentLvl}</span>
+                        </span>
+                        <span class="text-xs text-gray-300 mt-1">${up.desc}</span>
+                    </div>
+                    ${buttonHTML}
+                `;
+                
+                container.appendChild(card);
+            }
+        }
+
+        window.buyUpgrade = function(key, cost) {
+            if (playerProgress.coins >= cost) {
+                playerProgress.coins -= cost;
+                playerProgress.upgrades[key] += 1;
+                saveProgress();
+                audio.playSuperCoin();
+                document.getElementById("shop-coin-balance").innerText = playerProgress.coins;
+                renderShopUpgrades();
+            } else {
+                audio.playShieldBreak();
+            }
+        };
+
+        // Initialize display parameters on boot
+        document.getElementById("menu-coin-count").innerText = playerProgress.coins;
+        document.getElementById("menu-level-status").innerText = `المستوى الحالي: ${playerProgress.highestLevelUnlocked} / 30`;
+        
+        requestAnimationFrame(gameLoop);
+        
+    </script>
+</body>
+</html>
